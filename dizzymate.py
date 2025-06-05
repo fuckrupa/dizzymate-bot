@@ -1605,10 +1605,7 @@ def main():
     logger = logging.getLogger(__name__)
 
     # Create the Application
-    application = Application.builder().token(BOT_TOKEN).build()
-
-    # Hook our on_startup to register commands
-    application.post_init(on_startup)
+    application = Application.builder().token(BOT_TOKEN).post_init(on_startup).build()
 
     # Add command handlers
     application.add_handler(CommandHandler("start", start_command))
