@@ -15,7 +15,12 @@ import json
 from datetime import datetime, date, time, timedelta
 
 import pytz
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import (
+    Update,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    BotCommand  # ✅ ADD THIS
+)
 from telegram.constants import ChatAction, ParseMode
 from telegram.ext import (
     Application,
@@ -1567,6 +1572,26 @@ def setup_periodic_jobs(application):
 # BOT ENTRYPOINT (formerly main.py)
 # ---------------------------------------------------
 
+async def on_startup(application: Application) -> None:
+    """
+    Run once when the bot starts. Registers commands in Telegram’s “/” menu.
+    """
+    commands = [
+        BotCommand("start",   "👋 Start / Restart the bot"),
+        BotCommand("gay",     "🏳️‍🌈 Gay of the Day"),
+        BotCommand("couple",  "💕 Couple of the Day"),
+        BotCommand("simp",    "🥺 Simp of the Day"),
+        BotCommand("toxic",   "☠️ Toxic of the Day"),
+        BotCommand("cringe",  "😬 Cringe of the Day"),
+        BotCommand("respect", "🫡 Show Respect for a user"),
+        BotCommand("sus",     "📮 Sus of the Day"),
+        BotCommand("ghost",   "👻 Summon tonight’s Ghost"),
+        BotCommand("fight",   "⚔️ Start or view a fight"),
+        BotCommand("aura",    "📊 Show the aura leaderboard"),
+    ]
+    await application.bot.set_my_commands(commands)
+    logging.getLogger(__name__).info("✅ Bot commands set in menu.")
+
 def main():
     """Start the bot."""
     # Initialize database
@@ -1581,6 +1606,9 @@ def main():
 
     # Create the Application
     application = Application.builder().token(BOT_TOKEN).build()
+
+    # Hook our on_startup to register commands
+    application.post_init(on_startup)
 
     # Add command handlers
     application.add_handler(CommandHandler("start", start_command))
