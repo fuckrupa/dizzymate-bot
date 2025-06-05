@@ -53,73 +53,73 @@ AURA_POINTS = {
 # Command messages
 COMMAND_MESSAGES = {
     'gay': [
-        "🏳️‍🌈 Today's Gay of the Day is {user}! 🌈✨",
-        "🏳️‍🌈 Congratulations {user}, you're the fabulous Gay of the Day! 💅✨",
-        "🌈 {user} has been crowned the Gay of the Day! 🏳️‍🌈👑"
+        "🏳️‍🌈 Today's Gay of the Day is {user.mention_html()}! 🌈✨",
+        "🏳️‍🌈 Congratulations {user.mention_html()}, you're the fabulous Gay of the Day! 💅✨",
+        "🌈 {user.mention_html()} has been crowned the Gay of the Day! 🏳️‍🌈👑"
     ],
     'couple': [
-        "💕 Today's adorable couple is {user1} and {user2}! 💑✨",
-        "❤️ Love is in the air! {user1} and {user2} are today's couple! 💕🥰",
-        "👫 {user1} and {user2} make the perfect couple today! 💖✨"
+        "💕 Today's adorable couple is {user1.mention_html()} and {user2.mention_html()}! 💑✨",
+        "❤️ Love is in the air! {user1.mention_html()} and {user2.mention_html()} are today's couple! 💕🥰",
+        "👫 {user1.mention_html()} and {user2.mention_html()} make the perfect couple today! 💖✨"
     ],
     'simp': [
-        "🥺 {user} is today's biggest simp! 💸👑",
-        "😍 Behold the ultimate simp of the day: {user}! 🥺💕",
-        "👑 {user} has achieved maximum simp level today! 🥺✨"
+        "🥺 {user.mention_html()} is today's biggest simp! 💸👑",
+        "😍 Behold the ultimate simp of the day: {user.mention_html()}! 🥺💕",
+        "👑 {user.mention_html()} has achieved maximum simp level today! 🥺✨"
     ],
     'toxic': [
-        "☠️ {user} is spreading toxic vibes today! 🤢💀",
-        "🧪 Warning: {user} is today's most toxic member! ☠️⚠️",
-        "💀 {user} wins the toxic award of the day! 🧪☠️"
+        "☠️ {user.mention_html()} is spreading toxic vibes today! 🤢💀",
+        "🧪 Warning: {user.mention_html()} is today's most toxic member! ☠️⚠️",
+        "💀 {user.mention_html()} wins the toxic award of the day! 🧪☠️"
     ],
     'cringe': [
-        "😬 {user} is today's cringe master! 🤡💀",
-        "🤢 Maximum cringe level achieved by {user}! 😬🤡",
-        "💀 {user} made everyone cringe today! 😬✨"
+        "😬 {user.mention_html()} is today's cringe master! 🤡💀",
+        "🤢 Maximum cringe level achieved by {user.mention_html()}! 😬🤡",
+        "💀 {user.mention_html()} made everyone cringe today! 😬✨"
     ],
     'respect': [
-        "🫡 Infinite respect for {user}! 👑✨",
-        "🙏 {user} deserves all the respect today! 🫡💫",
-        "👑 Mad respect for {user}! 🙏✨"
+        "🫡 Infinite respect for {user.mention_html()}! 👑✨",
+        "🙏 {user.mention_html()} deserves all the respect today! 🫡💫",
+        "👑 Mad respect for {user.mention_html()}! 🙏✨"
     ],
     'sus': [
-        "📮 {user} is acting pretty sus today! 👀🔍",
-        "🤔 {user} looking sus af! 📮👀",
-        "👀 Emergency meeting! {user} is sus! 📮🚨"
+        "📮 {user.mention_html()} is acting pretty sus today! 👀🔍",
+        "🤔 {user.mention_html()} looking sus af! 📮👀",
+        "👀 Emergency meeting! {user.mention_html()} is sus! 📮🚨"
     ],
     'ghost': [
-        "👻 {user} is tonight's spooky ghost! 🌙💀",
-        "🌙 {user} haunts the darkness tonight! 👻⚰️",
-        "💀 {user} emerges from the shadows! 👻🌑"
+        "👻 {user.mention_html()} is tonight's spooky ghost! 🌙💀",
+        "🌙 {user.mention_html()} haunts the darkness tonight! 👻⚰️",
+        "💀 {user.mention_html()} emerges from the shadows! 👻🌑"
     ]
 }
 
 # Fight messages
 FIGHT_MESSAGES = {
     'random_fight_announcement': [
-        "⚔️ <b>RANDOM FIGHT ALERT!</b> ⚔️\n\n🥊 {user1} vs {user2} 🥊\n\n💥 Both fighters have 1 hour to accept this challenge!\n🏆 Winner gets +100 aura points!\n⏰ Fight expires if not accepted!",
-        "🔥 <b>EPIC BATTLE ROYALE!</b> 🔥\n\n⚔️ {user1} vs {user2} ⚔️\n\n💪 Random fighters selected for today's battle!\n🏆 +100 aura awaits the victor!\n⏱️ 1 hour to accept or it's void!",
-        "🌟 <b>ULTIMATE SHOWDOWN!</b> 🌟\n\n🥊 {user1} vs {user2} 🥊\n\n🎯 The arena awaits these random warriors!\n💰 +100 aura for the champion!\n⏰ Accept within 1 hour!"
+        "⚔️ <b>RANDOM FIGHT ALERT!</b> ⚔️\n\n🥊 {user1.mention_html()} vs {user2.mention_html()} 🥊\n\n💥 Both fighters have 1 hour to accept this challenge!\n🏆 Winner gets +100 aura points!\n⏰ Fight expires if not accepted!",
+        "🔥 <b>EPIC BATTLE ROYALE!</b> 🔥\n\n⚔️ {user1.mention_html()} vs {user2.mention_html()} ⚔️\n\n💪 Random fighters selected for today's battle!\n🏆 +100 aura awaits the victor!\n⏱️ 1 hour to accept or it's void!",
+        "🌟 <b>ULTIMATE SHOWDOWN!</b> 🌟\n\n🥊 {user1.mention_html()} vs {user2.mention_html()} 🥊\n\n🎯 The arena awaits these random warriors!\n💰 +100 aura for the champion!\n⏰ Accept within 1 hour!"
     ],
     'user_fight_challenge': [
-        "⚔️ <b>CHALLENGE ISSUED!</b> ⚔️\n\n🥊 {challenger} has challenged {opponent} to a fight!\n\n💥 {opponent}, do you accept this challenge?\n🏆 Winner gets +100 aura points!\n⏰ You have 1 hour to accept!",
-        "🔥 <b>BATTLE CHALLENGE!</b> 🔥\n\n⚔️ {challenger} wants to fight {opponent}!\n\n💪 Will you accept this duel, {opponent}?\n🏆 +100 aura awaits the victor!\n⏱️ 1 hour to decide!",
-        "🌟 <b>DUEL REQUEST!</b> 🌟\n\n🥊 {challenger} has thrown down the gauntlet!\n{opponent}, the challenge is yours!\n\n🎯 Accept to begin the battle!\n💰 +100 aura for the winner!"
+        "⚔️ <b>CHALLENGE ISSUED!</b> ⚔️\n\n🥊 {challenger.mention_html()} has challenged {opponent.mention_html()} to a fight!\n\n💥 {opponent.mention_html()}, do you accept this challenge?\n🏆 Winner gets +100 aura points!\n⏰ You have 1 hour to accept!",
+        "🔥 <b>BATTLE CHALLENGE!</b> 🔥\n\n⚔️ {challenger.mention_html()} wants to fight {opponent.mention_html()}!\n\n💪 Will you accept this duel, {opponent.mention_html()}?\n🏆 +100 aura awaits the victor!\n⏱️ 1 hour to decide!",
+        "🌟 <b>DUEL REQUEST!</b> 🌟\n\n🥊 {challenger.mention_html()} has thrown down the gauntlet!\n{opponent.mention_html()}, the challenge is yours!\n\n🎯 Accept to begin the battle!\n💰 +100 aura for the winner!"
     ],
     'fight_accepted': [
-        "🔥 <b>FIGHT ACCEPTED!</b> 🔥\n\n⚔️ {user1} vs {user2} ⚔️\n\n💥 The battle has begun!\n🗣️ Both fighters must reply to each other!\n⏰ Last person to reply within 2 minutes wins!\n🏆 Winner gets +100 aura!",
-        "⚡ <b>BATTLE COMMENCED!</b> ⚡\n\n🥊 {user1} vs {user2} 🥊\n\n🔥 Let the epic fight begin!\n💬 Reply to each other to fight!\n⏱️ 2-minute window for each exchange!\n🏆 +100 aura to the victor!",
-        "🌟 <b>DUEL STARTED!</b> 🌟\n\n⚔️ {user1} vs {user2} ⚔️\n\n💪 The arena is set!\n🗨️ Exchange messages to battle!\n⏰ Last reply within 2 minutes wins!\n💰 +100 aura prize!"
+        "🔥 <b>FIGHT ACCEPTED!</b> 🔥\n\n⚔️ {user1.mention_html()} vs {user2.mention_html()} ⚔️\n\n💥 The battle has begun!\n🗣️ Both fighters must reply to each other!\n⏰ Last person to reply within 2 minutes wins!\n🏆 Winner gets +100 aura!",
+        "⚡ <b>BATTLE COMMENCED!</b> ⚡\n\n🥊 {user1.mention_html()} vs {user2.mention_html()} 🥊\n\n🔥 Let the epic fight begin!\n💬 Reply to each other to fight!\n⏱️ 2-minute window for each exchange!\n🏆 +100 aura to the victor!",
+        "🌟 <b>DUEL STARTED!</b> 🌟\n\n⚔️ {user1.mention_html()} vs {user2.mention_html()} ⚔️\n\n💪 The arena is set!\n🗨️ Exchange messages to battle!\n⏰ Last reply within 2 minutes wins!\n💰 +100 aura prize!"
     ],
     'fight_winner': [
-        "🏆 <b>VICTORY!</b> 🏆\n\n👑 {winner} emerges victorious! 👑\n\n💪 What an epic battle!\n✨ +100 aura points awarded!\n🎉 Congratulations, champion!",
-        "🥇 <b>CHAMPION CROWNED!</b> 🥇\n\n⚔️ {winner} wins the battle! ⚔️\n\n🔥 Incredible fighting spirit!\n💰 +100 aura points earned!\n🌟 Victory is yours!",
-        "👑 <b>ULTIMATE WINNER!</b> 👑\n\n🏆 {winner} claims victory! 🏆\n\n💥 Outstanding performance!\n✨ +100 aura points added!\n🎊 Well fought, warrior!"
+        "🏆 <b>VICTORY!</b> 🏆\n\n👑 {winner.mention_html()} emerges victorious! 👑\n\n💪 What an epic battle!\n✨ +100 aura points awarded!\n🎉 Congratulations, champion!",
+        "🥇 <b>CHAMPION CROWNED!</b> 🥇\n\n⚔️ {winner.mention_html()} wins the battle! ⚔️\n\n🔥 Incredible fighting spirit!\n💰 +100 aura points earned!\n🌟 Victory is yours!",
+        "👑 <b>ULTIMATE WINNER!</b> 👑\n\n🏆 {winner.mention_html()} claims victory! 🏆\n\n💥 Outstanding performance!\n✨ +100 aura points added!\n🎊 Well fought, warrior!"
     ],
     'fight_draw': [
-        "🤝 <b>IT'S A DRAW!</b> 🤝\n\n⚖️ {user1} and {user2} are equally matched!\n\n💥 Both fighters showed great skill!\n🏅 No aura points awarded for draws\n⚔️ Honor to both warriors!",
-        "⚖️ <b>STALEMATE!</b> ⚖️\n\n🤜 {user1} vs {user2} 🤛\n\n🔥 Neither could claim victory!\n🤝 A draw between equals!\n⚔️ Both fought valiantly!",
-        "🤝 <b>TIE GAME!</b> 🤝\n\n⚔️ {user1} and {user2} - perfectly matched!\n\n💪 Incredible battle, no winner!\n⚖️ Honor in the stalemate!\n🏅 Respect to both fighters!"
+        "🤝 <b>IT'S A DRAW!</b> 🤝\n\n⚖️ {user1.mention_html()} and {user2.mention_html()} are equally matched!\n\n💥 Both fighters showed great skill!\n🏅 No aura points awarded for draws\n⚔️ Honor to both warriors!",
+        "⚖️ <b>STALEMATE!</b> ⚖️\n\n🤜 {user1.mention_html()} vs {user2.mention_html()} 🤛\n\n🔥 Neither could claim victory!\n🤝 A draw between equals!\n⚔️ Both fought valiantly!",
+        "🤝 <b>TIE GAME!</b> 🤝\n\n⚔️ {user1.mention_html()} and {user2.mention_html()} - perfectly matched!\n\n💪 Incredible battle, no winner!\n⚖️ Honor in the stalemate!\n🏅 Respect to both fighters!"
     ],
     'fight_timeout': [
         "⏰ <b>FIGHT TIMED OUT!</b> ⏰\n\n🐔 Both fighters chickened out!\n\n💔 No one accepted the challenge\n❌ No aura points awarded\n🕐 Better luck next time!",
@@ -1208,8 +1208,8 @@ async def fight_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         add_or_update_user(**opponent_info)
 
         fight_id = create_fight(chat_id, user_id, opponent.id, 'user_initiated')
-        challenger_mention = get_user_mention_html(update.effective_user)
-        opponent_mention = get_user_mention_html(opponent)
+        challenger_mention = update.effective_user.mention_html()
+        opponent_mention = opponent.mention_html()
         message = random.choice(FIGHT_MESSAGES['user_fight_challenge']).format(
             challenger=challenger_mention, opponent=opponent_mention
         )
@@ -1435,6 +1435,7 @@ async def handle_fight_replies(update: Update, context: ContextTypes.DEFAULT_TYP
     update_fight_reply(fight['id'], user_id)
     other_user_id = fight['opponent_id'] if user_id == fight['challenger_id'] else fight['challenger_id']
 
+    # If the last reply was from a different user, schedule the winner callback
     if fight['last_reply_user_id'] and fight['last_reply_user_id'] != user_id:
         context.job_queue.run_once(
             active_fight_winner_callback,
@@ -1522,40 +1523,50 @@ async def active_fight_winner_callback(context: ContextTypes.DEFAULT_TYPE):
     chat_id = fight['chat_id']
 
     if winner_id:
+        # Award points to the winner
         update_aura_points(winner_id, AURA_POINTS['fight_winner'])
         close_fight(fight_id, 'completed', winner_id)
-        cursor.execute('SELECT * FROM users WHERE user_id = ?', (winner_id,))
-        winner_data = cursor.fetchone()
-        if winner_data:
-            winner_mention = get_user_mention_html_from_data(
-                winner_data["user_id"], winner_data["username"],
-                winner_data["first_name"], winner_data["last_name"]
+
+        # Fetch the ChatMember so we can call mention_html()
+        try:
+            member = await context.bot.get_chat_member(chat_id, winner_id)
+            winner_mention = member.user.mention_html()
+        except Exception as e:
+            logger.warning(f"Failed to fetch ChatMember for user {winner_id}: {e}")
+            # Fall back to raw user ID link if the API call fails:
+            winner_mention = f'<a href="tg://user?id={winner_id}">{winner_id}</a>'
+
+        message = random.choice(FIGHT_MESSAGES['fight_winner']).format(winner=winner_mention)
+        try:
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=message,
+                parse_mode=ParseMode.HTML
             )
-            message = random.choice(FIGHT_MESSAGES['fight_winner']).format(winner=winner_mention)
-            try:
-                await context.bot.send_message(
-                    chat_id=chat_id,
-                    text=message,
-                    parse_mode=ParseMode.HTML
-                )
-                if fight['is_random_fight']:
-                    update_random_fight_status(chat_id, 'completed')
-            except Exception as e:
-                logger.warning(f"Could not send winner message for fight {fight_id}: {e}")
+            if fight['is_random_fight']:
+                update_random_fight_status(chat_id, 'completed')
+        except Exception as e:
+            logger.warning(f"Could not send winner message for fight {fight_id}: {e}")
     else:
+        # No one replied—it's a draw.
         close_fight(fight_id, 'draw')
-        cursor.execute('SELECT * FROM users WHERE user_id IN (?, ?)',
-                       (fight['challenger_id'], fight['opponent_id']))
-        users = cursor.fetchall()
-        if len(users) == 2:
-            user1_mention = get_user_mention_html_from_data(
-                users[0]["user_id"], users[0]["username"],
-                users[0]["first_name"], users[0]["last_name"]
-            )
-            user2_mention = get_user_mention_html_from_data(
-                users[1]["user_id"], users[1]["username"],
-                users[1]["first_name"], users[1]["last_name"]
-            )
+        cursor.execute(
+            'SELECT challenger_id, opponent_id FROM active_fights WHERE id = ?',
+            (fight_id,)
+        )
+        row = cursor.fetchone()
+        if row:
+            challenger_id, opponent_id = row
+            mentions = []
+            for uid in (challenger_id, opponent_id):
+                try:
+                    member = await context.bot.get_chat_member(chat_id, uid)
+                    mentions.append(member.user.mention_html())
+                except Exception as e:
+                    logger.warning(f"Failed to fetch ChatMember for user {uid}: {e}")
+                    mentions.append(f'<a href="tg://user?id={uid}">{uid}</a>')
+
+            user1_mention, user2_mention = mentions
             message = random.choice(FIGHT_MESSAGES['fight_draw']).format(
                 user1=user1_mention, user2=user2_mention
             )
@@ -1601,8 +1612,6 @@ def setup_periodic_jobs(application):
         first=10
     )
     logger.info("Periodic jobs setup completed")
-
-
 
 # ---------------------------------------------------
 # BOT ENTRYPOINT (formerly main.py)
