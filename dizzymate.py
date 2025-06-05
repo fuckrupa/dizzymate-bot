@@ -1302,19 +1302,40 @@ async def fight_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data={'chat_id': chat_id, 'user1_id': selected_users[0]['user_id'], 'user2_id': selected_users[1]['user_id']}
     )
 
+
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle inline button callbacks."""
     query = update.callback_query
-    await query.answer()
-    data = query.data.split('_')
-    action = data[0]
+    await query.answer()  # Acknowledge the callback right away
 
-    if action == 'accept' and len(data) >= 3:
-        fight_id = int(data[2])
+    # Parse callback_data (e.g. "accept_fight_<id>" or "decline_fight_<id>")
+    parts = query.data.split('_')
+    action = parts[0]       # "accept" or "decline"
+    fight_id = int(parts[2]) if len(parts) >= 3 else None
+    chat_id = query.message.chat_id
+
+    # 1) Fetch the fight from DB (may have expired or been handled already)
+    fight = get_active_fight(chat_id, fight_id)
+    if not fight:
+        # If the fight no longer exists (expired, completed, or never was), show a popup:
+        await query.answer("❌ This fight is no longer available!", show_alert=True)
+        return
+
+    # 2) Only the challenged user (opponent_id) may click “Accept” or “Decline”.
+    #    If anyone else—whether it’s the challenger or a bystander—taps the button, show a popup.
+    if query.from_user.id != fight['opponent_id']:
+        await query.answer("❌ Only the challenged user can use this button!", show_alert=True)
+        return
+
+    # 3) At this point, we know the click is from the correct opponent → dispatch:
+    if action == 'accept':
         await handle_accept_fight(update, context, fight_id)
-    elif action == 'decline' and len(data) >= 3:
-        fight_id = int(data[2])
+    elif action == 'decline':
         await handle_decline_fight(update, context, fight_id)
+    else:
+        # Just in case some malformed callback_data appears
+        await query.answer("⚠️ Unknown action.", show_alert=True)
+
 
 async def handle_accept_fight(update: Update, context: ContextTypes.DEFAULT_TYPE, fight_id: int):
     """Handle fight acceptance."""
@@ -1330,15 +1351,19 @@ async def handle_accept_fight(update: Update, context: ContextTypes.DEFAULT_TYPE
         )
         return
 
+    # Double‐check once more that ONLY the opponent can accept
     if user_id != fight['opponent_id']:
         await query.answer("❌ Only the challenged user can accept this fight!", show_alert=True)
         return
 
+    # Mark fight as accepted
     accept_fight(fight_id)
+
+    # Fetch both users’ info for nicely formatting the “Fight Accepted” message
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM users WHERE user_id IN (?, ?)',
-                  (fight['challenger_id'], fight['opponent_id']))
+                   (fight['challenger_id'], fight['opponent_id']))
     users = cursor.fetchall()
     if len(users) == 2:
         user1_data = users[0] if users[0]['user_id'] == fight['challenger_id'] else users[1]
@@ -1354,6 +1379,7 @@ async def handle_accept_fight(update: Update, context: ContextTypes.DEFAULT_TYPE
         )
         await query.edit_message_text(message, parse_mode=ParseMode.HTML)
 
+
 async def handle_decline_fight(update: Update, context: ContextTypes.DEFAULT_TYPE, fight_id: int):
     """Handle fight decline."""
     query = update.callback_query
@@ -1368,11 +1394,15 @@ async def handle_decline_fight(update: Update, context: ContextTypes.DEFAULT_TYP
         )
         return
 
+    # Double‐check once more that ONLY the opponent can decline
     if user_id != fight['opponent_id']:
         await query.answer("❌ Only the challenged user can decline this fight!", show_alert=True)
         return
 
+    # Mark fight as 'declined'
     close_fight(fight_id, 'declined')
+
+    # Fetch the opponent’s info so we can say “X declined the fight!”
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
@@ -1385,6 +1415,7 @@ async def handle_decline_fight(update: Update, context: ContextTypes.DEFAULT_TYP
             f"🏃‍♂️ {user_mention} declined the fight! No battle today! 😔",
             parse_mode=ParseMode.HTML
         )
+
 
 async def handle_fight_replies(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle messages in active fights."""
@@ -1412,6 +1443,7 @@ async def handle_fight_replies(update: Update, context: ContextTypes.DEFAULT_TYP
             data={'fight_id': fight['id']}
         )
 
+
 async def ghost_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /ghost command - only works at night in Bangladesh time."""
     await typing_action(update, context)
@@ -1434,6 +1466,7 @@ async def ghost_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await handle_single_user_command(update, context, 'ghost')
 
+
 async def aura_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /aura command - show leaderboard."""
     await typing_action(update, context)
@@ -1455,6 +1488,7 @@ async def aura_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     leaderboard_text = format_aura_leaderboard(leaderboard, chat_title)
     await update.message.reply_text(leaderboard_text, parse_mode=ParseMode.HTML)
 
+
 async def random_fight_timeout_callback(context: ContextTypes.DEFAULT_TYPE):
     """Handle random fight timeout."""
     job_data = context.job.data
@@ -1471,6 +1505,7 @@ async def random_fight_timeout_callback(context: ContextTypes.DEFAULT_TYPE):
             )
         except Exception as e:
             logger.warning(f"Could not send random fight timeout message: {e}")
+
 
 async def active_fight_winner_callback(context: ContextTypes.DEFAULT_TYPE):
     """Handle active fight winner determination."""
@@ -1535,6 +1570,7 @@ async def active_fight_winner_callback(context: ContextTypes.DEFAULT_TYPE):
             except Exception as e:
                 logger.warning(f"Could not send draw message for fight {fight_id}: {e}")
 
+
 async def cleanup_expired_fights(context: ContextTypes.DEFAULT_TYPE):
     """Cleanup expired fights - runs periodically."""
     try:
@@ -1554,6 +1590,7 @@ async def cleanup_expired_fights(context: ContextTypes.DEFAULT_TYPE):
         cleanup_old_data()
     except Exception as e:
         logger.warning(f"Error during fight cleanup: {e}")
+
 
 def setup_periodic_jobs(application):
     """Setup periodic background jobs."""
