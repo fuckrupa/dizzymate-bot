@@ -1306,7 +1306,7 @@ async def fight_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle inline button callbacks."""
     query = update.callback_query
-    await query.answer()  # Acknowledge the callback right away
+    # Do not call `await query.answer()` unconditionally here—that would suppress pop‐ups.
 
     # Parse callback_data (e.g. "accept_fight_<id>" or "decline_fight_<id>")
     parts = query.data.split('_')
@@ -1317,12 +1317,12 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # 1) Fetch the fight from DB (may have expired or been handled already)
     fight = get_active_fight(chat_id, fight_id)
     if not fight:
-        # If the fight no longer exists (expired, completed, or never was), show a popup:
+        # If the fight no longer exists, show a pop-up and return
         await query.answer("❌ This fight is no longer available!", show_alert=True)
         return
 
-    # 2) Only the challenged user (opponent_id) may click “Accept” or “Decline”.
-    #    If anyone else—whether it’s the challenger or a bystander—taps the button, show a popup.
+    # 2) Only the challenged user (opponent_id) may click “Accept” or “Decline.”
+    #    If anyone else taps the button, show a pop-up.
     if query.from_user.id != fight['opponent_id']:
         await query.answer("❌ Only the challenged user can use this button!", show_alert=True)
         return
@@ -1333,7 +1333,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif action == 'decline':
         await handle_decline_fight(update, context, fight_id)
     else:
-        # Just in case some malformed callback_data appears
+        # In case of malformed callback_data:
         await query.answer("⚠️ Unknown action.", show_alert=True)
 
 
@@ -1601,6 +1601,8 @@ def setup_periodic_jobs(application):
         first=10
     )
     logger.info("Periodic jobs setup completed")
+
+
 
 # ---------------------------------------------------
 # BOT ENTRYPOINT (formerly main.py)
