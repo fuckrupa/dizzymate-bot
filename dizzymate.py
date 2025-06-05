@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 # ---------------------------------------------------
 # CONFIGURATION (formerly config.py)
 # ---------------------------------------------------
@@ -19,7 +16,7 @@ from telegram import (
     Update,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    BotCommand  # ✅ ADD THIS
+    BotCommand
 )
 from telegram.constants import ChatAction, ParseMode
 from telegram.ext import (
@@ -100,34 +97,34 @@ COMMAND_MESSAGES = {
 # Fight messages
 FIGHT_MESSAGES = {
     'random_fight_announcement': [
-        "⚔️ **RANDOM FIGHT ALERT!** ⚔️\n\n🥊 {user1} vs {user2} 🥊\n\n💥 Both fighters have 1 hour to accept this challenge!\n🏆 Winner gets +100 aura points!\n⏰ Fight expires if not accepted!",
-        "🔥 **EPIC BATTLE ROYALE!** 🔥\n\n⚔️ {user1} vs {user2} ⚔️\n\n💪 Random fighters selected for today's battle!\n🏆 +100 aura awaits the victor!\n⏱️ 1 hour to accept or it's void!",
-        "🌟 **ULTIMATE SHOWDOWN!** 🌟\n\n🥊 {user1} vs {user2} 🥊\n\n🎯 The arena awaits these random warriors!\n💰 +100 aura for the champion!\n⏰ Accept within 1 hour!"
+        "⚔️ <b>RANDOM FIGHT ALERT!</b> ⚔️\n\n🥊 {user1} vs {user2} 🥊\n\n💥 Both fighters have 1 hour to accept this challenge!\n🏆 Winner gets +100 aura points!\n⏰ Fight expires if not accepted!",
+        "🔥 <b>EPIC BATTLE ROYALE!</b> 🔥\n\n⚔️ {user1} vs {user2} ⚔️\n\n💪 Random fighters selected for today's battle!\n🏆 +100 aura awaits the victor!\n⏱️ 1 hour to accept or it's void!",
+        "🌟 <b>ULTIMATE SHOWDOWN!</b> 🌟\n\n🥊 {user1} vs {user2} 🥊\n\n🎯 The arena awaits these random warriors!\n💰 +100 aura for the champion!\n⏰ Accept within 1 hour!"
     ],
     'user_fight_challenge': [
-        "⚔️ **CHALLENGE ISSUED!** ⚔️\n\n🥊 {challenger} has challenged {opponent} to a fight!\n\n💥 {opponent}, do you accept this challenge?\n🏆 Winner gets +100 aura points!\n⏰ You have 1 hour to accept!",
-        "🔥 **BATTLE CHALLENGE!** 🔥\n\n⚔️ {challenger} wants to fight {opponent}!\n\n💪 Will you accept this duel, {opponent}?\n🏆 +100 aura awaits the victor!\n⏱️ 1 hour to decide!",
-        "🌟 **DUEL REQUEST!** 🌟\n\n🥊 {challenger} has thrown down the gauntlet!\n{opponent}, the challenge is yours!\n\n🎯 Accept to begin the battle!\n💰 +100 aura for the winner!"
+        "⚔️ <b>CHALLENGE ISSUED!</b> ⚔️\n\n🥊 {challenger} has challenged {opponent} to a fight!\n\n💥 {opponent}, do you accept this challenge?\n🏆 Winner gets +100 aura points!\n⏰ You have 1 hour to accept!",
+        "🔥 <b>BATTLE CHALLENGE!</b> 🔥\n\n⚔️ {challenger} wants to fight {opponent}!\n\n💪 Will you accept this duel, {opponent}?\n🏆 +100 aura awaits the victor!\n⏱️ 1 hour to decide!",
+        "🌟 <b>DUEL REQUEST!</b> 🌟\n\n🥊 {challenger} has thrown down the gauntlet!\n{opponent}, the challenge is yours!\n\n🎯 Accept to begin the battle!\n💰 +100 aura for the winner!"
     ],
     'fight_accepted': [
-        "🔥 **FIGHT ACCEPTED!** 🔥\n\n⚔️ {user1} vs {user2} ⚔️\n\n💥 The battle has begun!\n🗣️ Both fighters must reply to each other!\n⏰ Last person to reply within 2 minutes wins!\n🏆 Winner gets +100 aura!",
-        "⚡**BATTLE COMMENCED!** ⚡\n\n🥊 {user1} vs {user2} 🥊\n\n🔥 Let the epic fight begin!\n💬 Reply to each other to fight!\n⏱️ 2-minute window for each exchange!\n🏆 +100 aura to the victor!",
-        "🌟 **DUEL STARTED!** 🌟\n\n⚔️ {user1} vs {user2} ⚔️\n\n💪 The arena is set!\n🗨️ Exchange messages to battle!\n⏰ Last reply within 2 minutes wins!\n💰 +100 aura prize!"
+        "🔥 <b>FIGHT ACCEPTED!</b> 🔥\n\n⚔️ {user1} vs {user2} ⚔️\n\n💥 The battle has begun!\n🗣️ Both fighters must reply to each other!\n⏰ Last person to reply within 2 minutes wins!\n🏆 Winner gets +100 aura!",
+        "⚡ <b>BATTLE COMMENCED!</b> ⚡\n\n🥊 {user1} vs {user2} 🥊\n\n🔥 Let the epic fight begin!\n💬 Reply to each other to fight!\n⏱️ 2-minute window for each exchange!\n🏆 +100 aura to the victor!",
+        "🌟 <b>DUEL STARTED!</b> 🌟\n\n⚔️ {user1} vs {user2} ⚔️\n\n💪 The arena is set!\n🗨️ Exchange messages to battle!\n⏰ Last reply within 2 minutes wins!\n💰 +100 aura prize!"
     ],
     'fight_winner': [
-        "🏆 **VICTORY!** 🏆\n\n👑 {winner} emerges victorious! 👑\n\n💪 What an epic battle!\n✨ +100 aura points awarded!\n🎉 Congratulations, champion!",
-        "🥇 **CHAMPION CROWNED!** 🥇\n\n⚔️ {winner} wins the battle! ⚔️\n\n🔥 Incredible fighting spirit!\n💰 +100 aura points earned!\n🌟 Victory is yours!",
-        "👑 **ULTIMATE WINNER!** 👑\n\n🏆 {winner} claims victory! 🏆\n\n💥 Outstanding performance!\n✨ +100 aura points added!\n🎊 Well fought, warrior!"
+        "🏆 <b>VICTORY!</b> 🏆\n\n👑 {winner} emerges victorious! 👑\n\n💪 What an epic battle!\n✨ +100 aura points awarded!\n🎉 Congratulations, champion!",
+        "🥇 <b>CHAMPION CROWNED!</b> 🥇\n\n⚔️ {winner} wins the battle! ⚔️\n\n🔥 Incredible fighting spirit!\n💰 +100 aura points earned!\n🌟 Victory is yours!",
+        "👑 <b>ULTIMATE WINNER!</b> 👑\n\n🏆 {winner} claims victory! 🏆\n\n💥 Outstanding performance!\n✨ +100 aura points added!\n🎊 Well fought, warrior!"
     ],
     'fight_draw': [
-        "🤝 **IT'S A DRAW!** 🤝\n\n⚖️ {user1} and {user2} are equally matched!\n\n💥 Both fighters showed great skill!\n🏅 No aura points awarded for draws\n⚔️ Honor to both warriors!",
-        "⚖️ **STALEMATE!** ⚖️\n\n🤜 {user1} vs {user2} 🤛\n\n🔥 Neither could claim victory!\n🤝 A draw between equals!\n⚔️ Both fought valiantly!",
-        "🤝 **TIE GAME!** 🤝\n\n⚔️ {user1} and {user2} - perfectly matched!\n\n💪 Incredible battle, no winner!\n⚖️ Honor in the stalemate!\n🏅 Respect to both fighters!"
+        "🤝 <b>IT'S A DRAW!</b> 🤝\n\n⚖️ {user1} and {user2} are equally matched!\n\n💥 Both fighters showed great skill!\n🏅 No aura points awarded for draws\n⚔️ Honor to both warriors!",
+        "⚖️ <b>STALEMATE!</b> ⚖️\n\n🤜 {user1} vs {user2} 🤛\n\n🔥 Neither could claim victory!\n🤝 A draw between equals!\n⚔️ Both fought valiantly!",
+        "🤝 <b>TIE GAME!</b> 🤝\n\n⚔️ {user1} and {user2} - perfectly matched!\n\n💪 Incredible battle, no winner!\n⚖️ Honor in the stalemate!\n🏅 Respect to both fighters!"
     ],
     'fight_timeout': [
-        "⏰ **FIGHT TIMED OUT!** ⏰\n\n🐔 Both fighters chickened out!\n\n💔 No one accepted the challenge\n❌ No aura points awarded\n🕐 Better luck next time!",
-        "🕐 **TIME'S UP!** 🕐\n\n👻 Both warriors disappeared!\n\n💨 Fight expired without action\n❌ No points awarded\n⏰ Challenge void!",
-        "⌛ **EXPIRED!** ⌛\n\n🤷‍♂️ Nobody wanted to fight!\n\n💔 Challenge went unanswered\n❌ No points awarded\n🕰️ Maybe next time!"
+        "⏰ <b>FIGHT TIMED OUT!</b> ⏰\n\n🐔 Both fighters chickened out!\n\n💔 No one accepted the challenge\n❌ No aura points awarded\n🕐 Better luck next time!",
+        "🕐 <b>TIME'S UP!</b> 🕐\n\n👻 Both warriors disappeared!\n\n💨 Fight expired without action\n❌ No points awarded\n⏰ Challenge void!",
+        "⌛ <b>EXPIRED!</b> ⌛\n\n🤷‍♂️ Nobody wanted to fight!\n\n💔 Challenge went unanswered\n❌ No points awarded\n🕰️ Maybe next time!"
     ]
 }
 
