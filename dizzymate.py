@@ -735,11 +735,11 @@ def get_fight_winner_message():
 def format_aura_leaderboard(leaderboard_data, chat_title=None):
     """Format aura leaderboard message."""
     if not leaderboard_data:
-        return "📊 **Aura Leaderboard** 📊\n\n❌ No data available yet! Use some commands to get started! 🚀"
+        return "📊 <b>Aura Leaderboard</b> 📊\n\n❌ No data available yet! Use some commands to get started! 🚀"
     
-    title = f"📊 **Aura Leaderboard**"
+    title = "📊 <b>Aura Leaderboard</b>"
     if chat_title:
-        title += f" - {chat_title}"
+        title += f" - <b>{chat_title}</b>"
     title += " 📊\n\n"
     
     leaderboard_text = title
@@ -752,9 +752,9 @@ def format_aura_leaderboard(leaderboard_data, chat_title=None):
         )
         if position <= 3:
             medal = medals[position - 1]
-            leaderboard_text += f"{medal} **#{position}** {user_mention} - **{user['aura_points']}** aura\n"
+            leaderboard_text += f"{medal} <b>#{position}</b> {user_mention} - <b>{user['aura_points']}</b> aura\n"
         else:
-            leaderboard_text += f"🏅 **#{position}** {user_mention} - **{user['aura_points']}** aura\n"
+            leaderboard_text += f"🏅 <b>#{position}</b> {user_mention} - <b>{user['aura_points']}</b> aura\n"
     
     leaderboard_text += "\n💡 Use commands to gain or lose aura points!"
     return leaderboard_text
