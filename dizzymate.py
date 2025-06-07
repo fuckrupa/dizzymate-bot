@@ -958,7 +958,7 @@ async def couple_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode=ParseMode.HTML
         )
         return
-    await handle_couple_command(update, context 'couple')
+    await handle_couple_command(update, context)
 
 async def simp_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /simp command."""
