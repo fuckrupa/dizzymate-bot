@@ -621,60 +621,65 @@ def cleanup_old_data():
     conn.commit()
 
 # ---------------------------------------------------
-# UTILITY FUNCTIONS (formerly utils.py)
+# MENTION HELPERS - replaced to always use first/last name
 # ---------------------------------------------------
 
-def get_user_mention_html(user):
-    """Get HTML mention for a user."""
-    if hasattr(user, 'username') and user.username:
-        return f'<a href="tg://user?id={user.id}">@{user.username}</a>'
-    else:
-        full_name = user.first_name
-        if hasattr(user, 'last_name') and user.last_name:
-            full_name += f" {user.last_name}"
-        return f'<a href="tg://user?id={user.id}">{full_name}</a>'
+def _build_name(first_name: str | None, last_name: str | None) -> str:
+    """Return 'First' or 'First Last' – falls back to 'User' if missing."""
+    if first_name:
+        return f"{first_name}{f' {last_name}' if last_name else ''}"
+    return "User"
 
-def get_user_mention_html_from_data(user_id, username, first_name, last_name):
-    """Get HTML mention from user data."""
-    if username:
-        return f'<a href="tg://user?id={user_id}">@{username}</a>'
-    else:
-        full_name = first_name
-        if last_name:
-            full_name += f" {last_name}"
-        return f'<a href="tg://user?id={user_id}">{full_name}</a>'
+def get_user_mention_html(user) -> str:
+    """Clickable mention that always shows the person’s name, never @username."""
+    display = _build_name(user.first_name, getattr(user, 'last_name', None))
+    return f'{sanitize_html(display)}'
 
-def is_night_time_in_bangladesh():
+def get_user_mention_html_from_data(
+    user_id: int,
+    username: str | None,
+    first_name: str | None,
+    last_name: str | None
+) -> str:
+    """Clickable mention using stored data, prioritizing first/last name."""
+    display = _build_name(first_name, last_name)
+    return f'{sanitize_html(display)}'
+
+def format_user_display_name(username: str | None, first_name: str | None, last_name: str | None) -> str:
+    """Utility to format a user’s display name."""
+    return _build_name(first_name, last_name)
+
+# ---------------------------------------------------
+# TIME UTILS FOR GHOST COMMAND
+# ---------------------------------------------------
+
+def is_night_time_in_bangladesh() -> bool:
     """Check if it's night time in Bangladesh (6 PM to 6 AM)."""
     bd_tz = pytz.timezone(BANGLADESH_TZ)
     bd_time = datetime.now(bd_tz).time()
-    
-    # Night time is from 18:00 (6 PM) to 06:00 (6 AM)
     night_start = time(18, 0)  # 6 PM
     night_end = time(6, 0)     # 6 AM
-    
     return bd_time >= night_start or bd_time <= night_end
 
-def get_time_until_night():
+def get_time_until_night() -> tuple[int, int]:
     """Get time remaining until night time in Bangladesh."""
     bd_tz = pytz.timezone(BANGLADESH_TZ)
     bd_now = datetime.now(bd_tz)
     bd_time = bd_now.time()
-    
-    if bd_time < time(18, 0):  # Before 6 PM
+    if bd_time < time(18, 0):
         next_night = bd_now.replace(hour=18, minute=0, second=0, microsecond=0)
-        time_diff = next_night - bd_now
-    else:  # After 6 PM, next night is tomorrow at 6 PM
+    else:
         next_night = bd_now.replace(hour=18, minute=0, second=0, microsecond=0) + timedelta(days=1)
-        time_diff = next_night - bd_now
-    
+    time_diff = next_night - bd_now
     hours = int(time_diff.total_seconds() // 3600)
     minutes = int((time_diff.total_seconds() % 3600) // 60)
-    
     return hours, minutes
 
+# ---------------------------------------------------
+# RANDOM USER SELECTION
+# ---------------------------------------------------
+
 def select_random_users(users, count=1, exclude=None):
-    """Select random users from a list, excluding specified users."""
     if exclude is None:
         exclude = []
     available_users = [user for user in users if user['user_id'] not in exclude]
@@ -683,7 +688,6 @@ def select_random_users(users, count=1, exclude=None):
     return random.sample(available_users, count)
 
 def select_random_users_seeded(users, count=1, seed=None, exclude=None):
-    """Select random users with a seed for reproducible results."""
     if exclude is None:
         exclude = []
     available_users = [user for user in users if user['user_id'] not in exclude]
@@ -695,18 +699,43 @@ def select_random_users_seeded(users, count=1, seed=None, exclude=None):
     random.seed()
     return selected
 
-def format_user_display_name(username, first_name, last_name):
-    """Format user display name."""
-    if username:
-        return f"@{username}"
-    else:
-        full_name = first_name or "Unknown"
-        if last_name:
-            full_name += f" {last_name}"
-        return full_name
+# ---------------------------------------------------
+# LEADERBOARD FORMATTING - updated
+# ---------------------------------------------------
+
+def format_aura_leaderboard(leaderboard_data, chat_title=None) -> str:
+    """Return the cleaned-up leaderboard text (no #, no '-', first-name only)."""
+    if not leaderboard_data:
+        return (
+            "📊 <b>Aura Leaderboard</b> 📊\n\n"
+            "❌ No data available yet! Use some commands to get started! 🚀"
+        )
+    title = "📊 <b>Aura Leaderboard</b>"
+    if chat_title:
+        title += f" - <b>{sanitize_html(chat_title)}</b>"
+    title += " 📊\n\n"
+    medals = ["🥇", "🥈", "🥉"]
+    lines: list[str] = []
+    for pos, user in enumerate(leaderboard_data, start=1):
+        mention = get_user_mention_html_from_data(
+            user["user_id"],
+            user.get("username"),
+            user.get("first_name"),
+            user.get("last_name")
+        )
+        aura = f"<b>{user['aura_points']}</b> aura"
+        if pos <= 3:
+            lines.append(f"{medals[pos-1]} {mention}! {aura}")
+        else:
+            lines.append(f"{pos}. {mention} {aura}")
+    lines.append("\n💡 Use commands to gain or lose aura points!")
+    return title + "\n".join(lines)
+
+# ---------------------------------------------------
+# FIGHT MESSAGE HELPERS
+# ---------------------------------------------------
 
 def get_fight_timeout_message():
-    """Get random fight timeout message."""
     messages = [
         "⏰ Fight timed out! Both fighters chickened out! 🐔",
         "🕐 Time's up! It's a draw because nobody replied! 🤝",
@@ -715,7 +744,6 @@ def get_fight_timeout_message():
     return random.choice(messages)
 
 def get_fight_draw_message():
-    """Get random fight draw message."""
     messages = [
         "🤝 It's a draw! Both fighters are equally matched! ⚔️",
         "⚖️ Draw! Neither fighter could claim victory! 🤝",
@@ -724,7 +752,6 @@ def get_fight_draw_message():
     return random.choice(messages)
 
 def get_fight_winner_message():
-    """Get random fight winner message."""
     messages = [
         "🏆 {winner} emerges victorious! 👑⚔️",
         "💪 {winner} wins the battle! 🥇✨",
@@ -732,81 +759,55 @@ def get_fight_winner_message():
     ]
     return random.choice(messages)
 
-def format_aura_leaderboard(leaderboard_data, chat_title=None):
-    """Format aura leaderboard message."""
-    if not leaderboard_data:
-        return "📊 <b>Aura Leaderboard</b> 📊\n\n❌ No data available yet! Use some commands to get started! 🚀"
-    
-    title = "📊 <b>Aura Leaderboard</b>"
-    if chat_title:
-        title += f" - <b>{chat_title}</b>"
-    title += " 📊\n\n"
-    
-    leaderboard_text = title
-    medals = ["🥇", "🥈", "🥉"]
-    
-    for i, user in enumerate(leaderboard_data):
-        position = i + 1
-        user_mention = get_user_mention_html_from_data(
-            user["user_id"], user["username"], user["first_name"], user["last_name"]
-        )
-        if position <= 3:
-            medal = medals[position - 1]
-            leaderboard_text += f"{medal} <b>#{position}</b> {user_mention} - <b>{user['aura_points']}</b> aura\n"
-        else:
-            leaderboard_text += f"🏅 <b>#{position}</b> {user_mention} - <b>{user['aura_points']}</b> aura\n"
-    
-    leaderboard_text += "\n💡 Use commands to gain or lose aura points!"
-    return leaderboard_text
+# ---------------------------------------------------
+# OTHER HELPERS
+# ---------------------------------------------------
 
 def extract_user_info(user):
-    """Extract user information from Telegram user object."""
     return {
         'user_id': user.id,
         'username': user.username,
         'first_name': user.first_name,
-        'last_name': user.last_name,
+        'last_name': getattr(user, 'last_name', None),
         'is_bot': user.is_bot,
         'language_code': user.language_code
     }
 
 def is_valid_fight_participant(user_id, challenger_id, opponent_id):
-    """Check if user can participate in fight actions."""
     return user_id in [challenger_id, opponent_id]
 
 def format_fight_participants(user1_data, user2_data):
-    """Format fight participants for display."""
-    user1_mention = get_user_mention_html_from_data(
-        user1_data["user_id"], user1_data["username"], user1_data["first_name"], user1_data["last_name"]
+    u1 = get_user_mention_html_from_data(
+        user1_data['user_id'],
+        user1_data.get('username'),
+        user1_data.get('first_name'),
+        user1_data.get('last_name')
     )
-    user2_mention = get_user_mention_html_from_data(
-        user2_data["user_id"], user2_data["username"], user2_data["first_name"], user2_data["last_name"]
+    u2 = get_user_mention_html_from_data(
+        user2_data['user_id'],
+        user2_data.get('username'),
+        user2_data.get('first_name'),
+        user2_data.get('last_name')
     )
-    return user1_mention, user2_mention
+    return u1, u2
 
 def get_random_fight_seed(chat_id, date_obj):
-    """Generate a seed for random fight selection."""
     return f"{chat_id}_{date_obj.strftime('%Y%m%d')}"
 
 def calculate_fight_winner(fight_data, last_reply_user_id):
-    """Calculate fight winner based on last reply."""
     return last_reply_user_id
 
 def format_time_remaining(seconds):
-    """Format remaining time in human readable format."""
     hours = int(seconds // 3600)
     minutes = int((seconds % 3600) // 60)
     if hours > 0:
         return f"{hours}h {minutes}m"
-    else:
-        return f"{minutes}m"
+    return f"{minutes}m"
 
 def is_admin_or_creator(member_status):
-    """Check if user is admin or creator."""
     return member_status in ['administrator', 'creator']
 
-def sanitize_html(text):
-    """Sanitize text for HTML parsing."""
+def sanitize_html(text: str) -> str:
     import html
     return html.escape(text)
 
