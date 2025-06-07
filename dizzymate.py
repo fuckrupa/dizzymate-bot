@@ -737,6 +737,7 @@ def format_aura_leaderboard(leaderboard_data, chat_title=None):
     if not leaderboard_data:
         return "📊 <b>Aura Leaderboard</b> 📊\n\n❌ No data available yet! Use some commands to get started! 🚀"
     
+    # Build header
     title = "📊 <b>Aura Leaderboard</b>"
     if chat_title:
         title += f" - <b>{chat_title}</b>"
@@ -747,17 +748,25 @@ def format_aura_leaderboard(leaderboard_data, chat_title=None):
     
     for i, user in enumerate(leaderboard_data):
         position = i + 1
+        # Mention with first_name as the display text
         user_mention = get_user_mention_html_from_data(
-            user["user_id"], user["username"], user["first_name"], user["last_name"]
+            user["user_id"],
+            user["username"],
+            user["first_name"],
+            user.get("last_name", "")
         )
+        points = user["aura_points"]
+        
         if position <= 3:
-            medal = medals[position - 1]
-            leaderboard_text += f"{medal} <b>#{position}</b> {user_mention} - <b>{user['aura_points']}</b> aura\n"
+            # Medal + mention (no “#1/#2/#3”)
+            leaderboard_text += f"{medals[position-1]}{user_mention}  <b>{points}</b> aura\n"
         else:
-            leaderboard_text += f"🏅 <b>#{position}</b> {user_mention} - <b>{user['aura_points']}</b> aura\n"
+            # Numbered list for 4th+
+            leaderboard_text += f"{position}. {user_mention}  <b>{points}</b> aura\n"
     
     leaderboard_text += "\n💡 Use commands to gain or lose aura points!"
     return leaderboard_text
+
 
 def extract_user_info(user):
     """Extract user information from Telegram user object."""
