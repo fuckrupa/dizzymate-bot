@@ -732,40 +732,57 @@ def get_fight_winner_message():
     ]
     return random.choice(messages)
 
+def get_user_mention_html_from_data(user_id, username, first_name, last_name=""):
+    """Return a clickable HTML mention showing only the first name."""
+    safe_name = first_name or "User"
+    return f'<a href="tg://user?id={user_id}">{safe_name}</a>'
+
+def extract_user_info(user):
+    """Convert a telegram.User object into a simple dict."""
+    return {
+        'user_id': getattr(user, 'id', 0),
+        'username': getattr(user, 'username', ""),
+        'first_name': getattr(user, 'first_name', "User"),
+        'last_name': getattr(user, 'last_name', ""),
+        'is_bot': getattr(user, 'is_bot', False),
+        'language_code': getattr(user, 'language_code', "")
+    }
+
 def format_aura_leaderboard(leaderboard_data, chat_title=None):
-    """Format aura leaderboard message."""
+    """Format the aura leaderboard with first-name mentions."""
     if not leaderboard_data:
-        return "📊 <b>Aura Leaderboard</b> 📊\n\n❌ No data available yet! Use some commands to get started! 🚀"
-    
-    # Build header
+        return (
+            "📊 <b>Aura Leaderboard</b> 📊\n\n"
+            "❌ No data available yet! Use some commands to get started! 🚀"
+        )
+
+    # Header
     title = "📊 <b>Aura Leaderboard</b>"
     if chat_title:
         title += f" - <b>{chat_title}</b>"
     title += " 📊\n\n"
-    
-    leaderboard_text = title
+
+    text = [title]
     medals = ["🥇", "🥈", "🥉"]
-    
-    for i, user in enumerate(leaderboard_data):
-        position = i + 1
-        # Mention with first_name as the display text
-        user_mention = get_user_mention_html_from_data(
+
+    for idx, user in enumerate(leaderboard_data, start=1):
+        mention = get_user_mention_html_from_data(
             user["user_id"],
             user["username"],
             user["first_name"],
             user.get("last_name", "")
         )
-        points = user["aura_points"]
-        
-        if position <= 3:
-            # Medal + mention (no “#1/#2/#3”)
-            leaderboard_text += f"{medals[position-1]}{user_mention}  <b>{points}</b> aura\n"
+        points = user.get("aura_points", 0)
+
+        if idx <= 3:
+            # top 3: medal + name
+            text.append(f"{medals[idx-1]}{mention}  <b>{points}</b> aura")
         else:
-            # Numbered list for 4th+
-            leaderboard_text += f"{position}. {user_mention}  <b>{points}</b> aura\n"
-    
-    leaderboard_text += "\n💡 Use commands to gain or lose aura points!"
-    return leaderboard_text
+            # 4th+: numbered list
+            text.append(f"{idx}. {mention}  <b>{points}</b> aura")
+
+    text.append("\n💡 Use commands to gain or lose aura points!")
+    return "\n".join(text)
 
 
 def extract_user_info(user):
