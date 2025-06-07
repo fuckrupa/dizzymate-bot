@@ -642,8 +642,8 @@ def get_user_mention_html_from_data(
     last_name: str | None
 ) -> str:
     """Clickable mention using stored data, prioritizing first/last name."""
-    display = _build_name(first_name, last_name)
-    return f'{sanitize_html(display)}'
+    display = sanitize_html(_build_name(first_name, last_name))
+    return f'<a href="tg://user?id={user_id}">{display}</a>'
 
 def format_user_display_name(username: str | None, first_name: str | None, last_name: str | None) -> str:
     """Utility to format a user’s display name."""
