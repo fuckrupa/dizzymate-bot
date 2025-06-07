@@ -703,33 +703,33 @@ def select_random_users_seeded(users, count=1, seed=None, exclude=None):
 # LEADERBOARD FORMATTING - updated
 # ---------------------------------------------------
 
-def format_aura_leaderboard(leaderboard_data, chat_title=None) -> str:
-    """Return the cleaned-up leaderboard text (no #, no '-', first-name only)."""
+def format_aura_leaderboard(leaderboard_data, chat_title=None):
+    """Format aura leaderboard message."""
     if not leaderboard_data:
-        return (
-            "📊 <b>Aura Leaderboard</b> 📊\n\n"
-            "❌ No data available yet! Use some commands to get started! 🚀"
-        )
+        return "📊 <b>Aura Leaderboard</b> 📊\n\n❌ No data available yet! Use some commands to get started! 🚀"
+
     title = "📊 <b>Aura Leaderboard</b>"
     if chat_title:
-        title += f" - <b>{sanitize_html(chat_title)}</b>"
+        title += f" - <b>{chat_title}</b>"
     title += " 📊\n\n"
+
+    leaderboard_text = title
     medals = ["🥇", "🥈", "🥉"]
-    lines: list[str] = []
-    for pos, user in enumerate(leaderboard_data, start=1):
-        mention = get_user_mention_html_from_data(
-            user["user_id"],
-            user.get("username"),
-            user.get("first_name"),
-            user.get("last_name")
+
+    for i, user in enumerate(leaderboard_data):
+        position = i + 1
+        user_mention = get_user_mention_html_from_data(
+            user["user_id"], user["username"], user["first_name"], user["last_name"]
         )
-        aura = f"<b>{user['aura_points']}</b> aura"
-        if pos <= 3:
-            lines.append(f"{medals[pos-1]} {mention}! {aura}")
+        aura = user["aura_points"]
+        if position <= 3:
+            medal = medals[position - 1]
+            leaderboard_text += f"{medal} {user_mention}! <b>{aura}</b> aura\n"
         else:
-            lines.append(f"{pos}. {mention} {aura}")
-    lines.append("\n💡 Use commands to gain or lose aura points!")
-    return title + "\n".join(lines)
+            leaderboard_text += f"🏅 {user_mention} <b>{aura}</b> aura\n"
+
+    leaderboard_text += "\n💡 Use commands to gain or lose aura points!"
+    return leaderboard_text
 
 # ---------------------------------------------------
 # FIGHT MESSAGE HELPERS
