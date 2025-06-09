@@ -6,12 +6,13 @@ import os
 import logging
 import random
 import asyncio
-import sqlite3
 import threading
 import json
 from datetime import datetime, date, time, timedelta
 
 import pytz
+import psycopg2
+import psycopg2.extras
 from telegram import (
     Update,
     InlineKeyboardButton,
@@ -147,293 +148,267 @@ MAX_MEMBERS_PER_BATCH = 200  # Telegram API limit
 # Thread-local storage for database connections
 local_data = threading.local()
 
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:pass@localhost:5432/dbname")
+
 def get_db_connection():
-    """Get a thread-local database connection."""
-    if not hasattr(local_data, 'connection'):
-        local_data.connection = sqlite3.connect('telegram_bot.db', check_same_thread=False)
-        local_data.connection.row_factory = sqlite3.Row
-    return local_data.connection
+    """Get a thread-local PostgreSQL connection."""
+    if not hasattr(local_data, 'conn'):
+        local_data.conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+        local_data.conn.autocommit = True
+    return local_data.conn
 
 def init_database():
     """Initialize the database with required tables."""
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cur = conn.cursor()
     
-    # Users table - Enhanced for better member data collection
-    cursor.execute('''
+    # Users table
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            user_id INTEGER PRIMARY KEY,
+            user_id BIGINT PRIMARY KEY,
             username TEXT,
             first_name TEXT,
             last_name TEXT,
             aura_points INTEGER DEFAULT 0,
-            is_bot INTEGER DEFAULT 0,
+            is_bot BOOLEAN DEFAULT FALSE,
             language_code TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             message_count INTEGER DEFAULT 0
-        )
-    ''')
+        );
+    """)
     
-    # Chat members table - For tracking group membership
-    cursor.execute('''
+    # Chat members table
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS chat_members (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            chat_id INTEGER,
-            user_id INTEGER,
+            id SERIAL PRIMARY KEY,
+            chat_id BIGINT,
+            user_id BIGINT,
             status TEXT DEFAULT 'member',
             joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users (user_id),
-            UNIQUE(chat_id, user_id)
-        )
-    ''')
+            UNIQUE(chat_id, user_id),
+            FOREIGN KEY (user_id) REFERENCES users(user_id)
+        );
+    """)
     
     # Command usage tracking table
-    cursor.execute('''
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS command_usage (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            chat_id INTEGER,
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT,
+            chat_id BIGINT,
             command TEXT,
             used_date DATE,
             last_announcement TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users (user_id),
-            UNIQUE(user_id, chat_id, command, used_date)
-        )
-    ''')
+            UNIQUE(user_id, chat_id, command, used_date),
+            FOREIGN KEY (user_id) REFERENCES users(user_id)
+        );
+    """)
     
-    # Active fights table - Enhanced for comprehensive fight management
-    cursor.execute('''
+    # Active fights table
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS active_fights (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            chat_id INTEGER,
-            challenger_id INTEGER,
-            opponent_id INTEGER,
+            id SERIAL PRIMARY KEY,
+            chat_id BIGINT,
+            challenger_id BIGINT,
+            opponent_id BIGINT,
             fight_type TEXT DEFAULT 'user_initiated',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             accepted_at TIMESTAMP,
-            last_reply_user_id INTEGER,
+            last_reply_user_id BIGINT,
             last_reply_time TIMESTAMP,
             status TEXT DEFAULT 'pending',
-            winner_id INTEGER,
-            is_random_fight INTEGER DEFAULT 0,
-            fight_data TEXT
-        )
-    ''')
+            winner_id BIGINT,
+            is_random_fight BOOLEAN DEFAULT FALSE,
+            fight_data JSONB,
+            FOREIGN KEY (challenger_id) REFERENCES users(user_id),
+            FOREIGN KEY (opponent_id) REFERENCES users(user_id)
+        );
+    """)
     
-    # Daily selections table (for commands that select users once per day)
-    cursor.execute('''
+    # Daily selections table
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS daily_selections (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            chat_id INTEGER,
+            id SERIAL PRIMARY KEY,
+            chat_id BIGINT,
             command TEXT,
-            selected_user_id INTEGER,
-            selected_user_id_2 INTEGER,
+            selected_user_id BIGINT,
+            selected_user_id_2 BIGINT,
             selection_date DATE,
-            selection_data TEXT,
+            selection_data JSONB,
             UNIQUE(chat_id, command, selection_date)
-        )
-    ''')
+        );
+    """)
     
-    # Random fights table - Track daily random fights
-    cursor.execute('''
+    # Random fights table
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS random_fights (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            chat_id INTEGER,
-            user1_id INTEGER,
-            user2_id INTEGER,
+            id SERIAL PRIMARY KEY,
+            chat_id BIGINT,
+            user1_id BIGINT,
+            user2_id BIGINT,
             fight_date DATE,
             status TEXT DEFAULT 'pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(chat_id, fight_date)
-        )
-    ''')
+        );
+    """)
     
-    conn.commit()
-
 def add_or_update_user(user_id, username=None, first_name=None, last_name=None, is_bot=False, language_code=None):
     """Add or update user information with enhanced data collection."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        INSERT OR REPLACE INTO users (
-            user_id, username, first_name, last_name, is_bot, language_code,
-            aura_points, message_count, last_seen
-        )
-        VALUES (?, ?, ?, ?, ?, ?, 
-            COALESCE((SELECT aura_points FROM users WHERE user_id = ?), 0),
-            COALESCE((SELECT message_count FROM users WHERE user_id = ?), 0) + 1,
-            CURRENT_TIMESTAMP
-        )
-    ''', (user_id, username, first_name, last_name, int(is_bot), language_code, user_id, user_id))
-    
-    conn.commit()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO users (user_id, username, first_name, last_name, is_bot, language_code, aura_points, message_count, last_seen)
+        VALUES (%s, %s, %s, %s, %s, %s,
+                COALESCE((SELECT aura_points FROM users WHERE user_id = %s), 0),
+                COALESCE((SELECT message_count FROM users WHERE user_id = %s), 0) + 1,
+                CURRENT_TIMESTAMP)
+        ON CONFLICT (user_id) DO UPDATE SET
+            username = EXCLUDED.username,
+            first_name = EXCLUDED.first_name,
+            last_name = EXCLUDED.last_name,
+            is_bot = EXCLUDED.is_bot,
+            language_code = EXCLUDED.language_code,
+            message_count = users.message_count + 1,
+            last_seen = CURRENT_TIMESTAMP;
+    """, (user_id, username, first_name, last_name, is_bot, language_code, user_id, user_id))
 
 def add_chat_member(chat_id, user_id, status='member'):
     """Add or update chat member information."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        INSERT OR REPLACE INTO chat_members (chat_id, user_id, status, last_active)
-        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-    ''', (chat_id, user_id, status))
-    
-    conn.commit()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO chat_members (chat_id, user_id, status, last_active)
+        VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+        ON CONFLICT (chat_id, user_id) DO UPDATE SET
+            status = EXCLUDED.status,
+            last_active = CURRENT_TIMESTAMP;
+    """, (chat_id, user_id, status))
 
 def update_member_activity(chat_id, user_id):
     """Update member's last activity timestamp."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        UPDATE chat_members 
-        SET last_active = CURRENT_TIMESTAMP 
-        WHERE chat_id = ? AND user_id = ?
-    ''', (chat_id, user_id))
-    
-    if cursor.rowcount == 0:
-        # Member not in database, add them
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE chat_members
+        SET last_active = CURRENT_TIMESTAMP
+        WHERE chat_id = %s AND user_id = %s;
+    """, (chat_id, user_id))
+    if cur.rowcount == 0:
         add_chat_member(chat_id, user_id)
-    
-    conn.commit()
 
 def update_aura_points(user_id, points):
     """Update user's aura points."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        UPDATE users SET aura_points = aura_points + ? WHERE user_id = ?
-    ''', (points, user_id))
-    
-    conn.commit()
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE users SET aura_points = aura_points + %s WHERE user_id = %s;
+    """, (points, user_id))
 
 def can_use_command(user_id, chat_id, command):
     """Check if user can use a command (daily cooldown and hourly announcement limit)."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
+    cur = conn.cursor()
     today = date.today()
-    
-    # Check if command was used today
-    cursor.execute('''
-        SELECT last_announcement FROM command_usage 
-        WHERE user_id = ? AND chat_id = ? AND command = ? AND used_date = ?
-    ''', (user_id, chat_id, command, today))
-    
-    result = cursor.fetchone()
-    
-    if result:
-        last_announcement = datetime.fromisoformat(result[0]) if result[0] else None
+    cur.execute("""
+        SELECT last_announcement FROM command_usage
+        WHERE user_id = %s AND chat_id = %s AND command = %s AND used_date = %s;
+    """, (user_id, chat_id, command, today))
+    row = cur.fetchone()
+    if row:
+        last_announcement = row['last_announcement']
         if last_announcement and (datetime.now() - last_announcement).total_seconds() < 3600:
             return False, "hourly_limit"
         return False, "daily_limit"
-    
     return True, "allowed"
 
 def mark_command_used(user_id, chat_id, command):
     """Mark command as used for today."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
+    cur = conn.cursor()
     today = date.today()
     now = datetime.now()
-    
-    cursor.execute('''
-        INSERT OR REPLACE INTO command_usage (user_id, chat_id, command, used_date, last_announcement)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (user_id, chat_id, command, today, now))
-    
-    conn.commit()
+    cur.execute("""
+        INSERT INTO command_usage (user_id, chat_id, command, used_date, last_announcement)
+        VALUES (%s, %s, %s, %s, %s)
+        ON CONFLICT (user_id, chat_id, command, used_date) DO UPDATE SET
+            last_announcement = EXCLUDED.last_announcement;
+    """, (user_id, chat_id, command, today, now))
 
 def get_leaderboard(chat_id, limit=10):
     """Get aura leaderboard for a chat."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Get users who are members of this chat
-    cursor.execute('''
+    cur = conn.cursor()
+    cur.execute("""
         SELECT u.user_id, u.username, u.first_name, u.last_name, u.aura_points
         FROM users u
         JOIN chat_members cm ON u.user_id = cm.user_id
-        WHERE cm.chat_id = ? AND u.is_bot = 0
+        WHERE cm.chat_id = %s AND u.is_bot = FALSE
         ORDER BY u.aura_points DESC
-        LIMIT ?
-    ''', (chat_id, limit))
-    
-    return cursor.fetchall()
+        LIMIT %s;
+    """, (chat_id, limit))
+    return cur.fetchall()
 
 def get_chat_users(chat_id):
     """Get users who are members of this chat."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
+    cur = conn.cursor()
+    cur.execute("""
         SELECT u.user_id, u.username, u.first_name, u.last_name
         FROM users u
         JOIN chat_members cm ON u.user_id = cm.user_id
-        WHERE cm.chat_id = ? AND u.is_bot = 0 AND cm.status IN ('member', 'administrator', 'creator')
-    ''', (chat_id,))
-    
-    return cursor.fetchall()
+        WHERE cm.chat_id = %s AND u.is_bot = FALSE
+          AND cm.status IN ('member', 'administrator', 'creator');
+    """, (chat_id,))
+    return cur.fetchall()
 
 def get_active_chat_members(chat_id):
     """Get recently active chat members (last 30 days)."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
+    cur = conn.cursor()
+    cur.execute("""
         SELECT u.user_id, u.username, u.first_name, u.last_name
         FROM users u
         JOIN chat_members cm ON u.user_id = cm.user_id
-        WHERE cm.chat_id = ? AND u.is_bot = 0 
-        AND cm.last_active >= datetime('now', '-30 days')
-        AND cm.status IN ('member', 'administrator', 'creator')
-    ''', (chat_id,))
-    
-    return cursor.fetchall()
+        WHERE cm.chat_id = %s AND u.is_bot = FALSE
+          AND cm.last_active >= NOW() - INTERVAL '30 days'
+          AND cm.status IN ('member', 'administrator', 'creator');
+    """, (chat_id,))
+    return cur.fetchall()
 
 def save_daily_selection(chat_id, command, user_id, user_id_2=None, selection_data=None):
     """Save daily selection for a command."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
+    cur = conn.cursor()
     today = date.today()
     data_json = json.dumps(selection_data) if selection_data else None
-    
-    cursor.execute('''
-        INSERT OR REPLACE INTO daily_selections (
-            chat_id, command, selected_user_id, selected_user_id_2, 
-            selection_date, selection_data
-        )
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (chat_id, command, user_id, user_id_2, today, data_json))
-    
-    conn.commit()
+    cur.execute("""
+        INSERT INTO daily_selections (chat_id, command, selected_user_id, selected_user_id_2, selection_date, selection_data)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        ON CONFLICT (chat_id, command, selection_date) DO UPDATE SET
+            selected_user_id = EXCLUDED.selected_user_id,
+            selected_user_id_2 = EXCLUDED.selected_user_id_2,
+            selection_data = EXCLUDED.selection_data;
+    """, (chat_id, command, user_id, user_id_2, today, data_json))
 
 def get_daily_selection(chat_id, command):
     """Get today's selection for a command."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
+    cur = conn.cursor()
     today = date.today()
-    
-    cursor.execute('''
-        SELECT selected_user_id, selected_user_id_2, selection_data 
+    cur.execute("""
+        SELECT selected_user_id, selected_user_id_2, selection_data
         FROM daily_selections
-        WHERE chat_id = ? AND command = ? AND selection_date = ?
-    ''', (chat_id, command, today))
-    
-    result = cursor.fetchone()
-    if result:
-        data = json.loads(result[2]) if result[2] else None
+        WHERE chat_id = %s AND command = %s AND selection_date = %s;
+    """, (chat_id, command, today))
+    row = cur.fetchone()
+    if row:
         return {
-            'user_id': result[0],
-            'user_id_2': result[1],
-            'data': data
+            'user_id': row['selected_user_id'],
+            'user_id_2': row['selected_user_id_2'],
+            'data': row['selection_data']
         }
     return None
 
@@ -442,176 +417,141 @@ def get_daily_selection(chat_id, command):
 def create_fight(chat_id, challenger_id, opponent_id, fight_type='user_initiated', is_random=False):
     """Create a new fight."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        INSERT INTO active_fights (
-            chat_id, challenger_id, opponent_id, fight_type, is_random_fight
-        )
-        VALUES (?, ?, ?, ?, ?)
-    ''', (chat_id, challenger_id, opponent_id, fight_type, int(is_random)))
-    
-    conn.commit()
-    return cursor.lastrowid
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO active_fights (chat_id, challenger_id, opponent_id, fight_type, is_random_fight)
+        VALUES (%s, %s, %s, %s, %s)
+        RETURNING id;
+    """, (chat_id, challenger_id, opponent_id, fight_type, is_random))
+    return cur.fetchone()['id']
 
 def get_active_fight(chat_id, fight_id):
     """Get active fight by ID."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
+    cur = conn.cursor()
+    cur.execute("""
         SELECT * FROM active_fights
-        WHERE id = ? AND chat_id = ? AND status IN ('pending', 'active')
-    ''', (fight_id, chat_id))
-    
-    return cursor.fetchone()
+        WHERE id = %s AND chat_id = %s AND status IN ('pending', 'active');
+    """, (fight_id, chat_id))
+    return cur.fetchone()
 
 def get_user_active_fight(user_id, chat_id):
     """Get user's active fight in a chat."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
+    cur = conn.cursor()
+    cur.execute("""
         SELECT * FROM active_fights
-        WHERE chat_id = ? AND (challenger_id = ? OR opponent_id = ?) 
-        AND status IN ('pending', 'active')
+        WHERE chat_id = %s AND (challenger_id = %s OR opponent_id = %s)
+          AND status IN ('pending', 'active')
         ORDER BY created_at DESC
-        LIMIT 1
-    ''', (chat_id, user_id, user_id))
-    
-    return cursor.fetchone()
+        LIMIT 1;
+    """, (chat_id, user_id, user_id))
+    return cur.fetchone()
 
 def accept_fight(fight_id):
     """Accept a fight."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
+    cur = conn.cursor()
+    cur.execute("""
         UPDATE active_fights
         SET accepted_at = CURRENT_TIMESTAMP, status = 'active'
-        WHERE id = ?
-    ''', (fight_id,))
-    
-    conn.commit()
+        WHERE id = %s;
+    """, (fight_id,))
 
 def update_fight_reply(fight_id, user_id):
     """Update fight with latest reply."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
+    cur = conn.cursor()
+    cur.execute("""
         UPDATE active_fights
-        SET last_reply_user_id = ?, last_reply_time = CURRENT_TIMESTAMP
-        WHERE id = ?
-    ''', (user_id, fight_id))
-    
-    conn.commit()
+        SET last_reply_user_id = %s, last_reply_time = CURRENT_TIMESTAMP
+        WHERE id = %s;
+    """, (user_id, fight_id))
 
 def close_fight(fight_id, status='completed', winner_id=None):
     """Close a fight."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
+    cur = conn.cursor()
+    cur.execute("""
         UPDATE active_fights
-        SET status = ?, winner_id = ?
-        WHERE id = ?
-    ''', (status, winner_id, fight_id))
-    
-    conn.commit()
+        SET status = %s, winner_id = %s
+        WHERE id = %s;
+    """, (status, winner_id, fight_id))
 
 def get_expired_fights():
     """Get fights that have expired."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
+    cur = conn.cursor()
     # Pending fights older than 1 hour
-    cursor.execute('''
+    cur.execute("""
         SELECT * FROM active_fights
-        WHERE status = 'pending' 
-        AND datetime(created_at, '+1 hour') <= datetime('now')
-    ''')
-    pending_expired = cursor.fetchall()
-    
+        WHERE status = 'pending'
+          AND created_at + INTERVAL '1 hour' <= NOW();
+    """)
+    pending_expired = cur.fetchall()
     # Active fights where last reply was more than 2 minutes ago
-    cursor.execute('''
+    cur.execute("""
         SELECT * FROM active_fights
-        WHERE status = 'active' 
-        AND last_reply_time IS NOT NULL
-        AND datetime(last_reply_time, '+2 minutes') <= datetime('now')
-    ''')
-    active_expired = cursor.fetchall()
-    
+        WHERE status = 'active'
+          AND last_reply_time IS NOT NULL
+          AND last_reply_time + INTERVAL '2 minutes' <= NOW();
+    """)
+    active_expired = cur.fetchall()
     return pending_expired, active_expired
 
 def create_random_fight(chat_id, user1_id, user2_id):
     """Create a daily random fight entry."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
+    cur = conn.cursor()
     today = date.today()
-    
-    cursor.execute('''
-        INSERT OR REPLACE INTO random_fights (chat_id, user1_id, user2_id, fight_date)
-        VALUES (?, ?, ?, ?)
-    ''', (chat_id, user1_id, user2_id, today))
-    
-    conn.commit()
+    cur.execute("""
+        INSERT INTO random_fights (chat_id, user1_id, user2_id, fight_date)
+        VALUES (%s, %s, %s, %s)
+        ON CONFLICT (chat_id, fight_date) DO NOTHING;
+    """, (chat_id, user1_id, user2_id, today))
 
 def get_todays_random_fight(chat_id):
     """Get today's random fight for a chat."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
+    cur = conn.cursor()
     today = date.today()
-    
-    cursor.execute('''
+    cur.execute("""
         SELECT * FROM random_fights
-        WHERE chat_id = ? AND fight_date = ?
-    ''', (chat_id, today))
-    
-    return cursor.fetchone()
+        WHERE chat_id = %s AND fight_date = %s;
+    """, (chat_id, today))
+    return cur.fetchone()
 
 def update_random_fight_status(chat_id, status):
     """Update random fight status."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
+    cur = conn.cursor()
     today = date.today()
-    
-    cursor.execute('''
+    cur.execute("""
         UPDATE random_fights
-        SET status = ?
-        WHERE chat_id = ? AND fight_date = ?
-    ''', (status, chat_id, today))
-    
-    conn.commit()
+        SET status = %s
+        WHERE chat_id = %s AND fight_date = %s;
+    """, (status, chat_id, today))
 
 def get_chat_member_count(chat_id):
     """Get total member count for a chat."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        SELECT COUNT(*) FROM chat_members
-        WHERE chat_id = ? AND status IN ('member', 'administrator', 'creator')
-    ''', (chat_id,))
-    
-    result = cursor.fetchone()
-    return result[0] if result else 0
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT COUNT(*) AS count FROM chat_members
+        WHERE chat_id = %s AND status IN ('member', 'administrator', 'creator');
+    """, (chat_id,))
+    return cur.fetchone()['count']
 
 def cleanup_old_data():
     """Cleanup old fight data and inactive members."""
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
+    cur = conn.cursor()
     # Remove completed fights older than 7 days
-    cursor.execute('''
+    cur.execute("""
         DELETE FROM active_fights
         WHERE status IN ('completed', 'expired', 'cancelled')
-        AND datetime(created_at, '+7 days') <= datetime('now')
-    ''')
-    
+          AND created_at + INTERVAL '7 days' <= NOW();
+    """)
     # Remove old random fights (older than 30 days)
     cursor.execute('''
         DELETE FROM random_fights
